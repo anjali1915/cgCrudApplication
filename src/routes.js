@@ -12,7 +12,7 @@ const routes=[
     },
     {
         name:'EditForm',
-        path:'/edit/:mobile',
+        path:'/edit/:user_id',
         component: EditForm
     },
     {

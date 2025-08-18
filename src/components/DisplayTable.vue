@@ -14,48 +14,54 @@
 </tr>
 </thead>
 <tbody>
-<tr v-for="user in display_value" :key="user.mobilenumber">
-<td>{{ user.firstname }}</td>
-<td>{{ user.lastname }}</td>
-<td>{{ user.dateofbirth ? user.dateofbirth.slice(0,10) : ' ' }}</td>
-<td>{{ user.mobilenumber }}</td>
+<tr v-for="user in display_value" :key="user.user_id">
+<td>{{ user.first_name }}</td>
+<td>{{ user.last_name }}</td>
+<td>{{ user.dob }}</td>
+<td>{{ user.mobile_number }}</td>
 <td>{{ user.address }}</td>
 <td>
-<input type="button" v-on:click="editData(user.mobilenumber)" value="EDIT">
-<input type="button" v-on:click="deleteData(user.mobilenumber)" value="DELETE">
+<input type="button" v-on:click="editData(user.user_id)" value="EDIT">
+<input type="button" v-on:click="deleteData(user.user_id)" value="DELETE">
 </td>
 </tr>
 </tbody>
 </table>
 </div>
+<br/>
+<input type="button" v-on:click="createNewUser" value="CREATE NEW USER">
 </div>
 </template>
 <script>
+ 
 export default {
+   
 name: 'DisplayTable',
 data(){
     return {
-        display_value: []
+        display_value: [],
+        
     };
 },
 methods:{
-    editData(mobilenumber){
-        this.display_value=mobilenumber;
-        this.$router.push(`/edit/${mobilenumber}`);
+    createNewUser(){
+        this.$router.push('/')
     },
-    async deleteData(mobilenumber){
-        await fetch(`http://localhost:8080/api/users/${mobilenumber}`,{
+    editData(user_id){
+        this.$router.push(`/edit/${user_id}`);
+    },
+    async deleteData(user_id){
+        await fetch(`http://localhost:8080/api/users/deleteUser/${user_id}`,{
             method: 'DELETE'
-    })
+        })
     .then(response=>{
-        
-    console.log(response)
-  response.json()
+        console.log(response)
+    return response.json()
+    .then(data=>{
+        console.log(data.users)
+        this.display_value= data.users;
     })
-    .then(data =>{
-        console.log(data);
-        this.display_value= data;
-        this.$router.push('/display');
+   
     })
     .catch(error=>{
         console.log("error in data deletion",error)
@@ -63,9 +69,12 @@ methods:{
     }
 },
 mounted(){
-fetch('http://localhost:8080/api/users')
+fetch('http://localhost:8080/api/users/getAllUsers')
 .then(res=>res.json())
 .then(data=>{
+    // console.log(data);
+    // console.log(data.dob);
+        
     this.display_value=data;
 })
 .catch(error =>{
@@ -76,7 +85,7 @@ fetch('http://localhost:8080/api/users')
 </script>
 <style scoped>
 h1{
-    color: red;
+    color: black;
     text-align: center;
 }
 table, tr, td, th {
@@ -97,11 +106,11 @@ table th{
     display: flex;
     justify-content: center;
 }
-table tr td input{
+input[type=button], table tr td input{
     padding: 1vh;
    margin-left:1vh;
     color:white;
-    background-color: green;
+    background-color: black;
 
 }
 
