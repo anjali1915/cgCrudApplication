@@ -14,11 +14,12 @@ const userController = {
     },
     //get all users
     getAllUsers: async (req, res) => {
+        const {page,limit,sortBy,direction} = req.query;
         try {
-            const result = await userServices.getAllUsers();
+            const result = await userServices.getAllUsers(page,limit,sortBy,direction);
             const users = formattedUsers(result.rows);
 
-        res.status(200).json(users);
+        res.status(200).json({message:"All data fetched", users: users});
     }
         catch (error) {
             console.log(error);
@@ -63,6 +64,17 @@ const userController = {
             res.status(500).json({ message: "User updation failed", error: error.message });
         }
 
+    },
+    filterUser: async (req,res) => {
+        const {search,page,limit,sortBy,direction} = req.query;
+        try{
+            const result = await userServices.filterUser(search,page,limit,sortBy,direction);
+             const users = formattedUsers(result.rows); 
+            res.status(200).json({message:"User filterd successfully", users: users})
+        } catch(error) {
+            console.log(error);
+            res.status(400).json({status:false,message:"Some error occured in filter User",error: error.message});
+        }
     }
 }
 
