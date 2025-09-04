@@ -22,7 +22,7 @@
 <div>
 <div class="column">
 <label for="dob">Date of Birth:</label>
-<input type="date" id="dob" name="dob" placeholder="Enter your birth date" v-model="formObj.dob">
+<input type="date" id="dob" name="dob" placeholder="MM-DD-YYYY" v-model="formObj.dob">
 </div>
 <p v-if="error.dob">{{ error.dob }}</p>
 </div>

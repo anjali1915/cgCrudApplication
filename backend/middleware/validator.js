@@ -1,65 +1,20 @@
-const validator = (req, res, next) => {
-    const { firstName, lastName, dob, mobileNumber, address } = req.body;
-    const errors = {};
+const Joi = require('joi');
 
-    // First Name
-    if (!firstName) {
-        errors.firstName = "First Name is empty";
-    } else {
-        if (firstName.length < 3) {
-            errors.firstName = "First Name should be at least 3 characters";
-        }
-        if (!/^[A-Za-z]+$/.test(firstName)) {
-            errors.firstName = "First Name should contain only alphabets";
-        }
+
+const userSchema = Joi.object({
+    firstName : Joi.string().min(3).max(10).required().pattern(/[a-zA-Z]+$/).messages({'string.pattern.base':'First Name should be text only'}),
+    lastName: Joi.string().min(3).max(10).required().pattern(/[a-zA-Z]+$/).messages({'string.pattern.base':'First Name should be text only'}),
+    dob: Joi.date().required().less('now').messages({'date.less':'Date of birth cannot be in the future'}),
+    mobileNumber: Joi.string().length(10).required().pattern(/^[6-9]\d{9}$/).messages({'string.pattern.base': 'Mobile number must be start with 6, 7,and 9 or of 10 numbers'}),
+    address: Joi.string().required(),
+});
+
+const validator = (req, res, next) =>{
+    const {error} = userSchema.validate(req.body, { abortEarly: false});
+
+    if(error){
+        return res.status(400).json({ success:false, message: "validation failed", error: error.message});
     }
-
-    // Last Name
-    if (!lastName) {
-        errors.lastName = "Last Name is empty";
-    } else {
-        if (lastName.length < 3) {
-            errors.lastName = "Last Name should be at least 3 characters";
-        }
-        if (!/^[A-Za-z]+$/.test(lastName)) {
-            errors.lastName = "Last Name should contain only alphabets";
-        }
-    }
-
-    // Date of Birth
-    if (!dob) {
-        errors.dob = "Date of birth is empty";
-    } else {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const isDate = new Date(dob);
-        if (isNaN(isDate.getTime()) || isDate > today) {
-            errors.dob = "Enter a valid date of birth";
-        }
-    }
-
-    // Mobile Number
-    if (!mobileNumber) {
-        errors.mobileNumber = "Mobile Number is empty";
-    } else if (!/^[0-9]{10}$/.test(mobileNumber)) {
-        errors.mobileNumber = "Mobile Number must be exactly 10 digits and contain only numbers";
-    }
-
-    // Address
-    if (!address) {
-        errors.address = "Address is empty";
-    }
-
-    // Return errors if any
-    if (Object.keys(errors).length > 0) {
-        return res.status(400).json({
-            success: false,
-            message: "Validation error occurred",
-            errors
-        });
-    }
-
     next();
-};
-
-module.exports = validator;
+}
+module.exports = validator

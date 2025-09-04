@@ -7,7 +7,8 @@ const userServices = {
             [firstName, lastNname, dob, mobileNumber, address]
         )
     },
-    getAllUsers: async (page,limit,sortBy,direction)=>{
+    getAllUsers: async (search,page,limit,sortBy,direction)=>{
+        const searchUser = search ? `%${search}%` : `$%%`;
         limit = parseInt(limit) || 5;
         page = parseInt(page) || 1;
         offset = (page-1)*limit;
@@ -19,9 +20,18 @@ const userServices = {
         if (!validateDirection.includes(direction)){
             direction="ASC";
         }
-        return await pool.query(
-            `SELECT * FROM userdetails ORDER BY ${sortBy} ${direction} LIMIT $1 OFFSET $2`,[limit,offset]
-        )
+        if(search && search.trim()!==''){
+            const searchUser = `%${search}%`;
+            query=`SELECT user_id, first_name, last_name, dob, mobile_number, address, count(*) OVER() AS total_count
+             FROM userdetails WHERE first_name ILIKE $1 OR last_name ILIKE $1 OR dob::TEXT ILIKE $1 OR mobile_number::TEXT 
+            ILIKE $1 OR address ILIKE $1 ORDER BY ${sortBy} ${direction} limit $2 offset $3`;
+            params=[searchUser,limit,offset];
+        } else{
+            query=`SELECT user_id, first_name, last_name, dob, mobile_number, address, count(*) OVER() AS total_count FROM 
+            userdetails ORDER BY ${sortBy} ${direction} limit $1 offset $2`;
+            params=[limit,offset]
+        }
+        return await pool.query(query,params);
     },
     getUser: async (id)=>{
         return await pool.query(
@@ -40,25 +50,8 @@ const userServices = {
             'UPDATE userdetails SET first_name= $1, last_name=$2, dob=$3, mobile_number=$4, address=$5 WHERE user_id=$6',
             [firstName,lastName,dob,mobileNumber,address,user_id]
         )
-    },
-    filterUser: async (search,page,limit,sortBy,direction) =>{
-        const searchUser = search ?`%${search}%` : `%% `;
-        limit = parseInt(limit) || 5;
-        page = parseInt(page) || 1;
-        offset = (page-1)*limit;
-        const validateSortBy = ["first_name", "last_name", "dob", "mobile_number", "address"];
-        if (!validateSortBy.includes(sortBy)){
-            sortBy = "first_name";
-        }
-        const validateDirection=["ASC", "DESC"];
-        if (!validateDirection.includes(direction)){
-            direction="ASC";
-        }
-        return await pool.query(
-            `SELECT * FROM userdetails WHERE first_name ILIKE $1 OR last_name ILIKE $1 OR dob::TEXT ILIKE $1 OR mobile_number::TEXT ILIKE $1 OR
-            address ILIKE $1 ORDER BY ${sortBy} ${direction} LIMIT $2 OFFSET $3`, [searchUser, limit, offset]
-        )
     }
+    
 }
 
 module.exports = userServices;

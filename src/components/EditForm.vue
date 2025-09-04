@@ -22,7 +22,7 @@
 <div>
 <div class="column">
 <label for="dob">Date of Birth:</label>
-<input type="date" id="dob" name="dob" placeholder="Enter your birth date" v-model="formObj.dob">
+<input type="text" id="dob" name="dob" placeholder="MM-DD-YYYY" v-model="formObj.dob">
 </div>
 <p v-if="error.dob">{{ error.dob }}</p>
 </div>
@@ -73,11 +73,16 @@ export default {
             
             const data = response.data;
             console.log(data);
-            
-            const isDate= data.dob.slice(0,10)
+            console.log(data.dob)
+          //const dob = new Date(data.dob);
+          console.log(data.dob)
+//const formattedDob = `${String(dob.getMonth() + 1).padStart(2, '0')}-${String(dob.getDate()).padStart(2, '0')}-${dob.getFullYear()}`;
+const isDate= data.dob.slice(0,10).split("-")
+const formattedDob= isDate.reverse().join("/");
+//console.log(formattedDob)
             this.formObj.firstName=data.first_name;
             this.formObj.lastName=data.last_name;
-            this.formObj.dob=isDate;
+            this.formObj.dob=formattedDob;
             this.formObj.mobileNumber =data.mobile_number ;
             this.formObj.address=data.address;
         })
