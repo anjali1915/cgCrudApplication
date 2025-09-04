@@ -39,7 +39,7 @@
 <div id="sorting">
 <h2>Select </h2>
 <h3>Choose table order key</h3>
-<select @click="changeSort(sortBy)" v-model="sortBy">
+<select @change="changeSort(sortBy)" v-model="sortBy">
     <option disabled value="">Please select one</option>
     <option value="first_name">First Name</option>
     <option value="last_name">Last Name</option>
@@ -50,12 +50,18 @@
 
 <br/>
 <h3>Choose direction of order</h3>
-<select @click="changeDirection(direction)" v-model="direction">
+<select @change="changeDirection(direction)" v-model="direction">
     <option disabled value="">Please select one</option>
     <option value="ASC">Ascending</option>
     <option value="DESC">Descending</option>
 </select>
-
+<br/>
+<h3>Choose page number</h3>
+<select @change="selectPage(pageNumber)" v-model="pageNumber">
+    <option disabled value="">Please select one</option>
+    <option v-for="pages in totalPages" :key="pages" :value="pages">{{ pages }}</option>
+    
+</select>
 </div>
 </div>
 <br/>
@@ -80,7 +86,10 @@ data(){
         lastSearch: '',
         limit: 5,
         sortBy: '',
-        direction: ''
+        direction: '',
+        totalRecord: '',
+        totalPages:'',
+        pageNumber:''
     };
 },
 methods:{
@@ -114,26 +123,34 @@ methods:{
     async fetchUser(){
         let url,params;
         try{
-            if(this.search && this.search.trim() !== ""){
-            url='http://localhost:8080/api/users/filterUser';
+           
+            url='http://localhost:8080/api/users/getAllUsers';
             params={search:this.search,page:this.page,limit:this.limit,sortBy:this.sortBy,direction:this.direction};
-        } else {
-            url = 'http://localhost:8080/api/users/getAllUsers';
-            params={page:this.page,limit:this.limit,sortBy:this.sortBy,direction:this.direction};
-        }
+          
         const result = await axios.get(url,{params})
-        this.display_value=result.data.users;
+        console.log(result.data.data.users)
+        this.display_value=result.data.data.users;
+        
+        if(result.data.data.users.length>0){
+                this.totalRecord = parseInt(result.data.data.users[0].total_count); 
+            }
+            this.totalPages= Math.ceil(this.totalRecord/this.limit);
+        console.log(this.totalRecord, this.totalPages)
         } catch(error) {
             console.log(error);
         }
         
+    },
+    selectPage(value){
+        this.page=value;
+        this.onSearch();
     },
     changePage(value){
         if(value == 'prev' && this.page>1){
             --this.page
             console.log(this.page)
         }
-        if(value=='next'){
+        if(value=='next' && this.page<this.totalPages){
             ++this.page
             console.log(this.page)
         }
@@ -158,8 +175,8 @@ methods:{
             const result = await axios.delete(`http://localhost:8080/api/users/deleteUser/${user_id}`)
             console.log(result)
             console.log(result.data)
-            console.log(result.data.users)
-             this.display_value= result.data.users;
+            console.log(result.data.data.users)
+             this.display_value= result.data.data.users;
         } catch(error){
             console.log("error in data deletion",error)
         }
