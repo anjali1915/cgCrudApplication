@@ -1,28 +1,26 @@
-import {createWebHistory, createRouter} from 'vue-router'
-
-import UserForm from './components/UserForm.vue'
-import EditForm from './components/EditForm.vue'
-import DisplayTable from './components/DisplayTable'
-
-const routes=[
+import { createWebHistory, createRouter } from 'vue-router';
+import UserForm from "./components/UserForm.vue";
+import EditForm from './components/EditForm.vue';
+import DisplayTable from './components/DisplayTable.vue';
+const routes = [
     {
-        name:'UserForm',
-        path:'/',
+        name: 'UserForm',
+        path: '/',
         component: UserForm
     },
     {
-        name:'EditForm',
-        path:'/edit/:user_id',
+        name: 'EditForm',
+        path: '/edit/:user_id',
         component: EditForm
     },
     {
-        name:'DisplayTable',
-        path:'/display',
-        component:DisplayTable
+        name: 'DisplayTable',
+        path: '/display',
+        component: DisplayTable
     }
 ];
 const router = createRouter({
-    history:createWebHistory(),
+    history: createWebHistory(),
     routes
-})
+});
 export default router;

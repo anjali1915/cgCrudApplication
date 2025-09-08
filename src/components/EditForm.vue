@@ -76,7 +76,7 @@ export default {
             console.log(data.dob)
           //const dob = new Date(data.dob);
           console.log(data.dob)
-//const formattedDob = `${String(dob.getMonth() + 1).padStart(2, '0')}-${String(dob.getDate()).padStart(2, '0')}-${dob.getFullYear()}`;
+
 const isDate= data.dob.slice(0,10).split("-")
 const formattedDob= isDate.reverse().join("/");
 //console.log(formattedDob)

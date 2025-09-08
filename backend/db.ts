@@ -1,12 +1,15 @@
 import { Pool } from "pg";
-const pool = new Pool({
+
+const pool:Pool = new Pool({
     user: 'cguser',
     host: 'localhost',
     password: 'cguser12',
     database: 'userdatabase',
     port: 5432
 });
+
 export default pool;
+
 //  create database userdatabase;
 // CREATE DATABASE
 //  create user cguser with encrypted password 'cguser12';
