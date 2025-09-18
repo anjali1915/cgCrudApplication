@@ -11,7 +11,7 @@
     <input type="password" name="password" v-model="formObj.password" placeholder="PASSWORD" /><span>🔒</span>
     </div>
     <p v-if="error.password">{{ error.password }}</p>
-    <button type="submit" value="submit" @click="submitForm"> LOG IN </button>
+    <button type="submit" @click="submitForm"> LOG IN </button>
     </form>
     </div>
    </div> 
