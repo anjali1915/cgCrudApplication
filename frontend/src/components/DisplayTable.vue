@@ -12,6 +12,9 @@
 <input type="search" placeholder="Search here" v-model="search" @keyup.enter="onSearch"/>
 <img src="\images\search-icon.png" alt="search-icon"  @click="onSearch"/>
 </div>
+<div id="logOut">
+        <button @click="logoutUser" >LOGOUT</button>
+</div>
 </div>
 <div id="table">
     <div>
@@ -100,6 +103,10 @@ data(){
     };
 },
 methods:{
+    logoutUser(){
+localStorage.removeItem("token");
+this.$router.push("/");
+},
     changeDirection(value){
         if(value=='AES') {
             this.direction= "AES"
@@ -130,11 +137,16 @@ methods:{
     async fetchUser(){
         let url,params;
         try{
-           
+           const token = localStorage.getItem("token")
             url='http://localhost:8080/api/users/getAllUsers';
             params={search:this.search,page:this.page,limit:this.limit,sortBy:this.sortBy,direction:this.direction};
           
-        const result = await axios.get(url,{params})
+        const result = await axios.get(url,{
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type" : "application/json"
+                },params},
+            )
         console.log(result.data.data.users)
         this.display_value=result.data.data.users;
         
@@ -170,14 +182,20 @@ methods:{
         
     },
     createNewUser(){
-        this.$router.push('/')
+        this.$router.push('/add-user')
     },
     editData(user_id){
         this.$router.push(`/edit/${user_id}`);
     },
     async deleteData(user_id){
         try{
-            const result = await axios.delete(`http://localhost:8080/api/users/deleteUser/${user_id}`)
+            const token = localStorage.getItem("token")
+            const result = await axios.delete(`http://localhost:8080/api/users/deleteUser/${user_id}`,{
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type" : "application/json"
+                }
+            })
             console.log(result)
             console.log(result.data)
             console.log(result.data.data.users)
@@ -267,6 +285,23 @@ input[type=button], table tr td input{
     margin-left: 11%;
     background-color: green;
     border-color: green;
+}
+#logOut{
+     margin-left: 17%;
+}
+#logOut button{
+   
+    background-color: red;
+    border: none;
+    padding: 1vh;
+   margin-left:1vh;
+    color:white;
+    width: 150%;
+    border-radius: 5px;
+    font-weight: bolder;
+}
+#logOut button:hover{
+    background-color:  #c1121f;
 }
 #search-embedded{
     border: solid black 3px;

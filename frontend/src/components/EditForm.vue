@@ -41,7 +41,7 @@
 <p v-if="error.address">{{ error.address }}</p>
 </div>
 <div class="column">
-<button type="button" id="update"  v-on:click="backData">UPDATE</button>
+<button type="button" id="update"  v-on:click="updateData">UPDATE</button>
 <button v-on:click="displayData" id="back" type="button">BACK</button>
 </div>
 </form>
@@ -68,7 +68,14 @@ export default {
     },
     mounted(){
         const user_id=this.$route.params.user_id;
-        axios.get(`http://localhost:8080/api/users/getUser/${user_id}`)
+        const token = localStorage.getItem("token");
+
+        axios.get(`http://localhost:8080/api/users/getUser/${user_id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type" : "application/json"
+                }
+            })
         .then(response=>{
             
             const data = response.data;
@@ -95,7 +102,7 @@ const formattedDob= isDate
         displayData(){
              this.$router.push('/display')
         },
-        backData(){
+        updateData(){
             const user_id = this.$route.params.user_id;
             this.error = [];
             if(this.formObj.firstName.length<3 && this.formObj.firstName){
@@ -125,7 +132,13 @@ const formattedDob= isDate
                     this.error.mobileNumber='Mobile Number is of numbers only';
                 }
                 console.log(this.formObj)
-            axios.put(`http://localhost:8080/api/users/updateUser/${user_id}`,this.formObj)
+                const token = localStorage.getItem("token"); 
+            axios.put(`http://localhost:8080/api/users/updateUser/${user_id}`,this.formObj,{
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type" : "application/json"
+                }
+            })
             .then(response=>{
                 console.log("response get")
                 console.log(response.data);

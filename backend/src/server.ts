@@ -2,10 +2,11 @@ import express from "express";
 import type { Application } from "express";
 import cors from 'cors';
 import bodyParser from 'body-parser';
-
+import dotenv from 'dotenv';
 import userRoutes from './Routes/userRoutes.js';
+dotenv.config();
 
-const port=8080;
+const port=process.env.PORT || 8080;
 const app:Application = express();
 
 app.use(cors()); //register middleware

@@ -39,8 +39,7 @@ const userController = {
         const id = req.params.id;
         try {
             const result = await userServices.getUser(id);
-            const users = formattedUsers(result.rows);
-            res.status(200).json(users[0]);
+            res.status(200).json(result.rows[0]);
         }
         catch (error) {
             console.log(error);
@@ -79,6 +78,27 @@ const userController = {
             console.log(error);
             res.status(500).json({ success: false, message: "User updation failed", error: error.message });
         }
+    },
+    loginController: async (req, res) => {
+        const username = req.body.username ? String(req.body.username) : "";
+        const password = req.body.username ? String(req.body.username) : "";
+        try {
+            if (username == "" || password == "")
+                return res.status(400).json({ success: false, error: "Username and password is required" });
+            const user = await userServices.authenticateUser(username, password);
+            if (!user) {
+                return res.status(401).json({ success: false, error: "No user found, invalid credentials" }); //unauthorised
+            }
+            const token = userServices.generateToken(user);
+            return res.status(200).json({ success: true, message: "token generated", token: token, role: user.role });
+        }
+        catch (error) {
+            console.log(error);
+            res.status(500).json({ success: false, message: "Authentication has error", error: error.message });
+        }
+    },
+    getAdminData: async (req, res) => {
+        res.json({ message: "Admin-only data", user: req.user });
     }
 };
 //to solve USD to ISD conversion

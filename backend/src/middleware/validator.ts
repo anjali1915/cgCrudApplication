@@ -1,5 +1,8 @@
 import Joi from 'joi';
 import type { Request, Response, NextFunction } from "express";
+import jwt from 'jsonwebtoken';
+
+
 
 const userSchema = Joi.object({
     firstName : Joi.string().min(3).max(10).required().pattern(/[a-zA-Z]+$/).messages({'string.pattern.base':'First Name should be text only'}),
@@ -17,4 +20,38 @@ const validator = (req: Request, res: Response, next: NextFunction) =>{
     }
     next();
 }
-export default validator
+
+const authenticate =(req: Request, res: Response, next: NextFunction)=>{
+
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.startsWith('Bearer') ? authHeader.split(" ")[1]: null;
+    if(!token){
+        return res.status(401).json({success: false, message: "Missing token"});
+    }
+    jwt.verify(token, process.env.JWT_SECRET_KEY as string, (err, payload) => {
+        if(err){
+            return res.status(401).json({status: false, message: "Invalid or expired token"})
+        }
+        console.log("Decoded payload:", payload);
+
+        (req as any).user = payload;
+        console.log("User inside authorize:", (req as any).user);
+
+        next();
+    })
+}
+
+const authorize = (req: Request, res: Response, next: NextFunction)=>{
+    console.log("User inside authorize:", (req as any).user);
+
+    if(!(req as any).user){
+        return res.status(401).json({success: false, message: "Not authenticated"})
+    }
+    if((req as any).user.role !== 'admin'){
+        return res.status(403).json({success: false, message: "Acess denied! Admin only"})
+    }
+    next();
+}
+export default validator;
+export { authenticate };
+export {authorize};

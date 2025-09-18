@@ -1,7 +1,9 @@
 import pool from '../config/db.js';
+import dotenv from 'dotenv';
+import jwt from "jsonwebtoken";
 const userServices = {
     saveUser: async (firstName, lastNname, dob, mobileNumber, address) => {
-        return await pool.query('INSERT INTO userdetails(first_name, last_name, dob, mobile_number, address) VALUES ($1, $2, $3::date, $4, $5)', [firstName, lastNname, dob, mobileNumber, address]);
+        return await pool.query('INSERT INTO user_details(first_name, last_name, dob, mobile_number, address) VALUES ($1, $2, $3::date, $4, $5)', [firstName, lastNname, dob, mobileNumber, address]);
     },
     getAllUsers: async (search, page, limit, sortBy, direction) => {
         const searchUser = search ? `%${search}%` : `$%%`;
@@ -19,25 +21,37 @@ const userServices = {
         if (search && search.trim() !== '') {
             const searchUser = `%${search}%`;
             query = `SELECT user_id, first_name, last_name, dob, mobile_number, address, count(*) OVER() AS total_count
-             FROM userdetails WHERE first_name ILIKE $1 OR last_name ILIKE $1 OR dob::TEXT ILIKE $1 OR mobile_number::TEXT 
+             FROM user_details WHERE first_name ILIKE $1 OR last_name ILIKE $1 OR dob::TEXT ILIKE $1 OR mobile_number::TEXT 
             ILIKE $1 OR address ILIKE $1 ORDER BY ${sortBy} ${direction} limit $2 offset $3`;
             params = [searchUser, limit, offset];
         }
         else {
             query = `SELECT user_id, first_name, last_name, dob, mobile_number, address, count(*) OVER() AS total_count FROM 
-            userdetails ORDER BY ${sortBy} ${direction} limit $1 offset $2`;
+            user_details ORDER BY ${sortBy} ${direction} limit $1 offset $2`;
             params = [limit, offset];
         }
         return await pool.query(query, params);
     },
     getUser: async (id) => {
-        return await pool.query('SELECT * FROM userdetails WHERE user_id=$1 ', [id]);
+        return await pool.query('SELECT * FROM user_details WHERE user_id=$1 ', [id]);
     },
     deleteUser: async (id) => {
-        return await pool.query('DELETE FROM userdetails WHERE user_id=$1', [id]);
+        return await pool.query('DELETE FROM user_details WHERE user_id=$1', [id]);
     },
     updateUser: async (firstName, lastName, dob, mobileNumber, address, user_id) => {
-        return await pool.query('UPDATE userdetails SET first_name= $1, last_name=$2, dob=$3, mobile_number=$4, address=$5 WHERE user_id=$6', [firstName, lastName, dob, mobileNumber, address, user_id]);
+        return await pool.query('UPDATE user_details SET first_name= $1, last_name=$2, dob=$3, mobile_number=$4, address=$5 WHERE user_id=$6', [firstName, lastName, dob, mobileNumber, address, user_id]);
+    },
+    authenticateUser: async (username, password) => {
+        const result = await pool.query('SELECT * from admin_users where username = $1 and password = $2', [username, password]);
+        if (result.rows.length === 0)
+            return null;
+        return result.rows[0];
+    },
+    generateToken: (user) => {
+        const payload = { id: user.id, username: user.username, role: user.role };
+        const secret = process.env.JWT_SECRET_KEY;
+        const options = { expiresIn: process.env.JWT_EXPIRES_IN ?? '1h' };
+        return jwt.sign(payload, secret, options);
     }
 };
 export default userServices;

@@ -83,7 +83,7 @@ const userController = {
 
     //update data
     updateUser: async (req: Request, res: Response) => {
-        const user_id: number |string|undefined= req.params.user_id="";
+        const user_id: number |string|undefined= req.params.user_id;
         const firstName = req.body.firstName ? String(req.body.firstName) : "";
         const lastName = req.body.lastName ? String(req.body.lastName) : "";
         const dob = req.body.dob ? String(req.body.dob) : null
@@ -99,6 +99,28 @@ const userController = {
             res.status(500).json({success:false, message: "User updation failed", error: error.message });
         }
 
+    },
+    loginController: async (req: Request, res: Response) =>{
+        const userName: string =req.body.userName? String(req.body.userName) : "";
+        const password: string =req.body.password ? String(req.body.password) : "";
+        try {
+            if(userName=="" || password=="")
+            return res.status(400).json({success: false, error:"Username and password is required"})
+        const user = await userServices.authenticateUser(userName,password);
+        if(!user) {
+            return res.status(401).json({success: false, error:"No user found, invalid credentials"})//unauthorised
+        }
+        const token = userServices.generateToken(user);
+        return res.status(200).json({success: true,message:"token generated", token : token, role: user.role});
+        } catch(error: any){
+            console.log(error);
+            res.status(500).json({ success: false, message: "Authentication has error", error: error.message })
+        }
+        
+    },
+
+    getAdminData: async (req: Request, res: Response) =>{
+        res.json({message: "Admin-only data", user: (req as any).user})
     }
 }
 
