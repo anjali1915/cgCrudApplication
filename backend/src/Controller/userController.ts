@@ -118,10 +118,6 @@ const userController = {
         }
         
     },
-
-    getAdminData: async (req: Request, res: Response) =>{
-        res.json({message: "Admin-only data", user: (req as any).user})
-    }
 }
 
 

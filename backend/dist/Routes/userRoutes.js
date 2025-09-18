@@ -3,11 +3,12 @@ const router = express.Router();
 import userController from '../Controller/userController.js';
 import validateUser from '../middleware/validator.js';
 import { authenticate } from '../middleware/validator.js';
+import { authorize } from '../middleware/validator.js';
 // 
-router.post('/loginUser', authenticate, userController.loginController);
-router.post('/saveUser', validateUser, userController.saveUser);
-router.get('/getAllUsers', userController.getAllUsers);
-router.get('/getUser/:id', userController.getUser);
-router.delete('/deleteUser/:user_id', userController.deleteUser);
-router.put('/updateUser/:user_id', validateUser, userController.updateUser);
+router.post('/loginUser', userController.loginController);
+router.post('/saveUser', validateUser, authenticate, authorize, userController.saveUser);
+router.get('/getAllUsers', authenticate, authorize, userController.getAllUsers);
+router.get('/getUser/:id', authenticate, authorize, userController.getUser);
+router.delete('/deleteUser/:user_id', authenticate, authorize, userController.deleteUser);
+router.put('/updateUser/:user_id', validateUser, authenticate, authorize, userController.updateUser);
 export default router;

@@ -24,9 +24,22 @@ const authenticate = (req, res, next) => {
         if (err) {
             return res.status(401).json({ status: false, message: "Invalid or expired token" });
         }
+        console.log("Decoded payload:", payload);
         req.user = payload;
+        console.log("User inside authorize:", req.user);
         next();
     });
 };
+const authorize = (req, res, next) => {
+    console.log("User inside authorize:", req.user);
+    if (!req.user) {
+        return res.status(401).json({ success: false, message: "Not authenticated" });
+    }
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: "Acess denied! Admin only" });
+    }
+    next();
+};
 export default validator;
 export { authenticate };
+export { authorize };

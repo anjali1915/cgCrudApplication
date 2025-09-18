@@ -1,6 +1,7 @@
 import pool from '../config/db.js';
 import dotenv from 'dotenv';
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 const userServices = {
     saveUser: async (firstName, lastNname, dob, mobileNumber, address) => {
         return await pool.query('INSERT INTO user_details(first_name, last_name, dob, mobile_number, address) VALUES ($1, $2, $3::date, $4, $5)', [firstName, lastNname, dob, mobileNumber, address]);
@@ -41,16 +42,20 @@ const userServices = {
     updateUser: async (firstName, lastName, dob, mobileNumber, address, user_id) => {
         return await pool.query('UPDATE user_details SET first_name= $1, last_name=$2, dob=$3, mobile_number=$4, address=$5 WHERE user_id=$6', [firstName, lastName, dob, mobileNumber, address, user_id]);
     },
-    authenticateUser: async (username, password) => {
-        const result = await pool.query('SELECT * from admin_users where username = $1 and password = $2', [username, password]);
+    authenticateUser: async (userName, password) => {
+        const result = await pool.query('SELECT * from admin_users where username = $1', [userName]);
         if (result.rows.length === 0)
             return null;
-        return result.rows[0];
+        const resultData = result.rows[0];
+        const ismatch = await bcrypt.compare(password, resultData.password);
+        if (!ismatch)
+            return null;
+        return resultData;
     },
     generateToken: (user) => {
-        const payload = { id: user.id, username: user.username, role: user.role };
+        const payload = { id: user.id, userName: user.userName, role: user.role };
         const secret = process.env.JWT_SECRET_KEY;
-        const options = { expiresIn: process.env.JWT_EXPIRES_IN ?? '1h' };
+        const options = { expiresIn: process.env.JWT_EXPIRES_IN ?? '10m' };
         return jwt.sign(payload, secret, options);
     }
 };

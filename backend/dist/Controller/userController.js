@@ -80,12 +80,12 @@ const userController = {
         }
     },
     loginController: async (req, res) => {
-        const username = req.body.username ? String(req.body.username) : "";
-        const password = req.body.username ? String(req.body.username) : "";
+        const userName = req.body.userName ? String(req.body.userName) : "";
+        const password = req.body.password ? String(req.body.password) : "";
         try {
-            if (username == "" || password == "")
+            if (userName == "" || password == "")
                 return res.status(400).json({ success: false, error: "Username and password is required" });
-            const user = await userServices.authenticateUser(username, password);
+            const user = await userServices.authenticateUser(userName, password);
             if (!user) {
                 return res.status(401).json({ success: false, error: "No user found, invalid credentials" }); //unauthorised
             }
@@ -97,9 +97,6 @@ const userController = {
             res.status(500).json({ success: false, message: "Authentication has error", error: error.message });
         }
     },
-    getAdminData: async (req, res) => {
-        res.json({ message: "Admin-only data", user: req.user });
-    }
 };
 //to solve USD to ISD conversion
 function formattedUsers(rows) {
