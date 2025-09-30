@@ -5,7 +5,8 @@ import UserForm from "./components/UserForm.vue";
 import EditForm from './components/EditForm.vue';
 import DisplayTable from './components/DisplayTable.vue';
 import LoginPage from './components/LoginPage.vue';
-
+import api from './api/axiosSetup.js';
+import type { ApiResponse, authUserPayload } from './types/interfaces.js';
 
 const routes:Array<RouteRecordRaw> = [
     {
@@ -38,15 +39,20 @@ const router = createRouter({
     routes
 });
 
-router.beforeEach((to,from,next)=>{
+router.beforeEach(async (to,from,next)=>{
     const publicPages = ['/'];
-    const authAuth = !publicPages.includes(to.path);
-    const token = localStorage.getItem("token");
-    if(authAuth && !token){
+    const authPage = !publicPages.includes(to.path);
+    
+    if( !authPage){
+        return next();
+    }
+    try{
+        await api.get<ApiResponse<authUserPayload>>('users/loginUserCheck')
+         next();
+    }catch(error){
+        const err = error as Error;
+        console.log(err);
         return next('/');
-    }
-    else {
-        next();
-    }
+    } 
 });
 export default router;

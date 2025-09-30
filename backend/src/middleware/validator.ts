@@ -1,7 +1,9 @@
 import Joi from 'joi';
 import type { Request, Response, NextFunction } from "express";
 import jwt from 'jsonwebtoken';
-
+import type { authUser, authUserPayload } from "../types/interfaces.ts"
+import { decryptToken } from '../crypto/cryptos.js';
+import userServices from '../Services/userServices.js'
 
 
 const userSchema = Joi.object({
@@ -23,35 +25,49 @@ const validator = (req: Request, res: Response, next: NextFunction) =>{
 
 const authenticate =(req: Request, res: Response, next: NextFunction)=>{
 
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.startsWith('Bearer') ? authHeader.split(" ")[1]: null;
+   
+    const token = req.cookies? req.cookies.token : undefined;
+    //console.log(token)
     if(!token){
         return res.status(401).json({success: false, message: "Missing token"});
     }
-    jwt.verify(token, process.env.JWT_SECRET_KEY as string, (err, payload) => {
-        if(err){
-            return res.status(401).json({status: false, message: "Invalid or expired token"})
-        }
-        console.log("Decoded payload:", payload);
+    try{
+        //console.log(token,"decrypt")
+        //decryption of token 
+        const decryptedToken = decryptToken(token)
+        //console.log("decrypted token",decryptedToken)
+            const payload = jwt.verify(decryptedToken, process.env.JWT_SECRET_KEY as string) as authUser;
+            //console.log("Decoded payload:", payload);
+        res.locals.user = { id: payload.id, role: payload.role } as authUserPayload;
+        const user = res.locals.user as authUserPayload;
+//console.log(user.id, user.role);
 
-        (req as any).user = payload;
-        console.log("User inside authorize:", (req as any).user);
-
+        //console.log("User inside authorize:", user);
         next();
-    })
+    } catch(error){
+        const err = error as Error;
+        return res.status(401).json({status: false, message: "Invalid or expired token", error: err.message})
+    }
 }
 
-const authorize = (req: Request, res: Response, next: NextFunction)=>{
-    console.log("User inside authorize:", (req as any).user);
-
-    if(!(req as any).user){
+const authorize = (permission: string)=>{
+    return async (req: Request, res: Response, next: NextFunction) =>{
+         const user = res.locals.user as authUserPayload;
+         //console.log(user)
+         if(!user){
         return res.status(401).json({success: false, message: "Not authenticated"})
-    }
-    if((req as any).user.role !== 'admin'){
-        return res.status(403).json({success: false, message: "Acess denied! Admin only"})
+         }
+         const result = await userServices.authorizeUser(user.id, permission);
+         //console.log(result)
+         if(!result){
+        return res.status(403).json({success: false, message: "Forbidden ! Not allowed"})
     }
     next();
-}
+    }
+    }
+
+    //console.log("User inside authorize:", user);
+
 export default validator;
 export { authenticate };
 export {authorize};

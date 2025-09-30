@@ -4,23 +4,7 @@ import dotenv from 'dotenv';
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import type { SignOptions } from 'jsonwebtoken';
-
-interface User {
-    user_id: string| undefined |number,
-    first_name: string,
-    last_name: string,
-    dob: string| null,
-    mobile_number: string,
-    address: String,
-}
-
-interface adminUser {
-    id: number,
-    userName: string,
-    password: string,
-    role: string,
-    timestamp: Date
-}
+import type { User, adminUser } from "../types/interfaces.js"
 
 const userServices = {
     saveUser: async (firstName: string , lastNname: string, dob: string| null, mobileNumber: string, address: string)
@@ -102,6 +86,16 @@ const userServices = {
         const secret = process.env.JWT_SECRET_KEY as string
         const options: SignOptions = { expiresIn: process.env.JWT_EXPIRES_IN as SignOptions["expiresIn"] ?? '10m' };
         return jwt.sign(payload,secret,options);
+    },
+
+    authorizeUser: async (id: Number, permission: string): Promise<boolean> => {
+        const querys = `SELECT 1 from admin_users as au 
+        JOIN role_permissions rp ON au.role = rp.role
+        JOIN permissions p ON rp.permission_id = p.id 
+        WHERE au.id = $1 AND p.name = $2 LIMIT 1`;
+        const result = await pool.query(querys,[id, permission]);
+            return result.rows.length > 0;
+        
     }
     
 }

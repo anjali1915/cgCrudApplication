@@ -8,12 +8,14 @@ import { authorize } from '../middleware/validator.js'
 
 // 
 
+router.get('/loginUserCheck',authenticate,userController.loginUserCheck);
+router.post('/logout',userController.logout);
 router.post('/loginUser',userController.loginController);
-router.post('/saveUser',validateUser,authenticate,authorize,userController.saveUser);
-router.get('/getAllUsers',authenticate,authorize,userController.getAllUsers);
-router.get('/getUser/:id',authenticate,authorize,userController.getUser);
-router.delete('/deleteUser/:user_id',authenticate,authorize,userController.deleteUser);
-router.put('/updateUser/:user_id',validateUser,authenticate,authorize,userController.updateUser);
+router.post('/saveUser',validateUser,authenticate,authorize("user:create"),userController.saveUser);
+router.get('/getAllUsers',authenticate,authorize("user:read"),userController.getAllUsers);
+router.get('/getUser/:id',authenticate,authorize("user:update"),userController.getUser);
+router.delete('/deleteUser/:user_id',authenticate,authorize("user:delete"),userController.deleteUser);
+router.put('/updateUser/:user_id',validateUser,authenticate,authorize("user:update"),userController.updateUser);
 
 
 export default router;

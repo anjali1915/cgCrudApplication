@@ -1,4 +1,5 @@
 import userServices from "../Services/userServices.js";
+import { encryptToken } from "../crypto/cryptos.js";
 const userController = {
     //create new user
     saveUser: async (req, res) => {
@@ -13,8 +14,9 @@ const userController = {
             res.status(201).json({ success: true, result, message: "User added Successfully" });
         }
         catch (error) {
-            console.log("Error in user addition", error);
-            res.status(500).json({ success: false, message: "Error in user addition", error: error.message });
+            const err = error;
+            console.log("Error in user addition", err);
+            res.status(500).json({ success: false, message: "Error in user addition", error: err.message });
         }
     },
     //get all users
@@ -30,8 +32,9 @@ const userController = {
             res.status(200).json({ success: true, message: "All data fetched", data: { users: users } });
         }
         catch (error) {
-            console.log(error);
-            res.status(500).json({ success: false, message: "Error in user selection", error: error.message });
+            const err = error;
+            console.log(err);
+            res.status(500).json({ success: false, message: "Error in user selection", error: err.message });
         }
     },
     //get specific user
@@ -42,8 +45,9 @@ const userController = {
             res.status(200).json(result.rows[0]);
         }
         catch (error) {
-            console.log(error);
-            res.status(500).json({ success: false, message: "Error in user selection using id", error: error.message });
+            const err = error;
+            console.log(err);
+            res.status(500).json({ success: false, message: "Error in user selection using id", error: err.message });
         }
     },
     //delete data
@@ -56,8 +60,9 @@ const userController = {
             res.status(200).json({ success: true, message: "User deleted successfully", data: { users: users } });
         }
         catch (error) {
-            console.log(error);
-            res.status(500).json({ success: false, message: "User deleted is failed", error: error.message });
+            const err = error;
+            console.log(err);
+            res.status(500).json({ success: false, message: "User deleted is failed", error: err.message });
         }
     },
     //update data
@@ -75,8 +80,9 @@ const userController = {
             res.status(200).json({ success: true, message: "User updated successfully", data: { users } });
         }
         catch (error) {
-            console.log(error);
-            res.status(500).json({ success: false, message: "User updation failed", error: error.message });
+            const err = error;
+            console.log(err);
+            res.status(500).json({ success: false, message: "User updation failed", error: err.message });
         }
     },
     loginController: async (req, res) => {
@@ -90,13 +96,36 @@ const userController = {
                 return res.status(401).json({ success: false, error: "No user found, invalid credentials" }); //unauthorised
             }
             const token = userServices.generateToken(user);
-            return res.status(200).json({ success: true, message: "token generated", token: token, role: user.role });
+            //encryption of token
+            const encryptedtoken = encryptToken(token);
+            //token send to frontend
+            res.cookie("token", encryptedtoken, {
+                httpOnly: true, //cannot be accessed by JS
+                secure: false, // over HTTPs
+                sameSite: "lax",
+                maxAge: 15 * 60 * 1000 //15 minutes
+            });
+            //console.log(token)
+            return res.status(200).json({ success: true, message: "token generated", role: user.role });
         }
         catch (error) {
-            console.log(error);
-            res.status(500).json({ success: false, message: "Authentication has error", error: error.message });
+            const err = error;
+            console.log(err);
+            res.status(500).json({ success: false, message: "Authentication has error", error: err.message });
         }
     },
+    logout: async (req, res) => {
+        res.clearCookie("token", {
+            httpOnly: false,
+            secure: false,
+            sameSite: "none"
+        });
+        res.status(200).json({ success: true, message: "User logout successfully" });
+    },
+    loginUserCheck: (req, res) => {
+        const user = res.locals.user;
+        return res.status(200).json({ success: true, message: "authenticated", user: user });
+    }
 };
 //to solve USD to ISD conversion
 function formattedUsers(rows) {

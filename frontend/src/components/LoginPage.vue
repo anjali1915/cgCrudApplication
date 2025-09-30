@@ -1,53 +1,62 @@
 <template>
-   <div id="container">
-    <div id="login">
-        <h2>Login Here</h2>
-        <form>
-        <div class="input-box">
-    <input type="text" name="userName" v-model="formObj.userName" placeholder="USERNAME"  /><span>👤</span>
+    <div id="container">
+        <div id="login">
+            <h2>Login Here</h2>
+            <form>
+                <div class="input-box">
+                    <input type="text" name="userName" v-model="formObj.userName"
+                        placeholder="USERNAME" /><span>👤</span>
+                </div>
+                <p v-if="error.userName">{{ error.userName }}</p>
+                <div class="input-box">
+                    <input type="password" name="password" v-model="formObj.password"
+                        placeholder="PASSWORD" /><span>🔒</span>
+                </div>
+                <p v-if="error.password">{{ error.password }}</p>
+                <button type="submit" @click="submitForm"> LOG IN </button>
+            </form>
+        </div>
     </div>
-     <p v-if="error.userName">{{ error.userName }}</p>
-    <div class="input-box">
-    <input type="password" name="password" v-model="formObj.password" placeholder="PASSWORD" /><span>🔒</span>
-    </div>
-    <p v-if="error.password">{{ error.password }}</p>
-    <button type="submit" @click="submitForm"> LOG IN </button>
-    </form>
-    </div>
-   </div> 
 </template>
 
 
-<script>
-import axios from 'axios';
-export default {
-    name : 'LoginPage',
-    data() {
-        return {
-            formObj:{
-                userName:"",
-                password:""
-            },
-            error:{
-                userName:"",
-                password:""
-            }
-        }
-    },
-    methods:{
-       async submitForm(e){
+<script setup lang="ts">
+import { reactive } from 'vue';
+import { useRouter } from 'vue-router'
+import type { AxiosResponse } from 'axios';
+import type { loginUser, ApiResponse } from '@/types/interfaces.ts'
+import api from '@/api/axiosSetup.js'
+
+
+const router = useRouter();
+
+
+
+const formObj = reactive<loginUser>({
+        userName: "",
+        password: ""
+    })
+
+const error = reactive<Record<keyof loginUser, string>>(
+{
+    userName: "",
+        password: ""
+})
+ 
+//submit form
+    async function submitForm(e : Event){
         e.preventDefault();
-         this.error={
-             userName: "",
-             password: ""
-         }
-        if(!this.formObj.userName){
-            this.error.userName="Username cannot be empty"
+       
+        //Reset form error
+        (Object.keys(error) as (keyof loginUser)[]).forEach((key)=>(error[key]=""));
+        
+        if (!formObj.userName) {
+            error.userName = "Username cannot be empty"
         } //else if(this.formObj.userName.length<5){
         //         this.error.userName="Username should be greater than 5"
         //     }
-        if(!this.formObj.password){
-            this.error.password="Password cannot be empty"
+        if (!formObj.password) {
+            error.password = "Password cannot be empty"
         } //else if(this.formObj.password){
         //     if(this.formObj.password.length<8){
         //         this.error.password="password is to short"
@@ -56,27 +65,26 @@ export default {
         //         this.error.password="password must be at least 8 characters long, include at least one uppercase, lowercase, number, and special character";
         //     }
         // } 
-        if(this.formObj.userName && this.formObj.password){
-            try{
-            console.log(this.formObj)
-            const response = await axios.post('http://localhost:8080/api/users/loginUser', this.formObj)
+        if (formObj.userName && formObj.password) {
+            try {
+                // console.log(formObj)
+                const response: AxiosResponse<ApiResponse<loginUser>, loginUser > = 
+                    await api.post('users/loginUser', formObj);
                 const data = response.data;
-                console.log(data)
-                if(data.token){
-                    localStorage.setItem("token", data.token);
-                    this.$router.push("/display")
-                } else{
+                //console.log(data)
+                if (data.success){
+                    router.push("/display")
+                } else {
                     alert("login failed, token not received")
                 }
-            } catch(error){
-                console.log(error.message);
+            } catch (error) {
+                const err = error as Error;
+                console.log(err.message);
                 alert("Login failed. Invalid credentials.");
             }
         }
-         
-       }
+
     }
-}
 </script>
 
 
@@ -87,9 +95,10 @@ export default {
     align-items: center;
     height: 100%;
     margin-top: 10%;
-    
+
 }
-#login{
+
+#login {
     height: 50%;
     width: 30%;
     background-color: #f8f7f7;
@@ -97,20 +106,24 @@ export default {
     border-radius: 15px;
     box-shadow: 0 8px 25px rgba(133, 132, 132, 0.3);
 }
-h2{
-    color: #333;;
+
+h2 {
+    color: #333;
+    ;
 
 }
-.input-box{
+
+.input-box {
     height: 15%;
     width: 73%;
     border-radius: 5px;
     border: black solid 1px;
-    background-color:white;
-    margin-left:12%;
+    background-color: white;
+    margin-left: 12%;
     margin: 10%;
 }
-input{
+
+input {
     height: 15%;
     padding: 2%;
     margin: 0.8;
@@ -119,7 +132,8 @@ input{
     outline: none;
     border: none;
 }
-button{
+
+button {
     border-radius: 10px;
     color: white;
     background-color: green;
@@ -128,14 +142,16 @@ button{
     height: 10%;
     width: 53%;
     font-weight: bolder;
-    font-size: 16px;  
+    font-size: 16px;
     border: none;
 }
-button:hover{
+
+button:hover {
     background-color: #4CAF50;
     transition: 0.03ms;
 }
-p{
+
+p {
     margin-top: -9%;
     color: red;
     font-size: 14px;

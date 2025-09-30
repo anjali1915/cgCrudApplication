@@ -5,6 +5,8 @@ import validateUser from '../middleware/validator.js';
 import { authenticate } from '../middleware/validator.js';
 import { authorize } from '../middleware/validator.js';
 // 
+router.get('/loginUserCheck', authenticate, authorize, userController.loginUserCheck);
+router.post('/logout', userController.logout);
 router.post('/loginUser', userController.loginController);
 router.post('/saveUser', validateUser, authenticate, authorize, userController.saveUser);
 router.get('/getAllUsers', authenticate, authorize, userController.getAllUsers);

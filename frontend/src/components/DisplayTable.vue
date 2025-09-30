@@ -83,134 +83,153 @@
 </div>
 </div>
 </template>
-<script>
- import axios from 'axios';
-export default {
-   
-name: 'DisplayTable',
-data(){
-    return {
-        page: 1,
-        display_value: [],
-        search: '',
-        lastSearch: '',
-        limit: 5,
-        sortBy: '',
-        direction: '',
-        totalRecord: '',
-        totalPages:'',
-        //pageNumber:''
-    };
-},
-methods:{
-    logoutUser(){
-localStorage.removeItem("token");
-this.$router.push("/");
-},
-    changeDirection(value){
+<script setup lang="ts">
+ import type { AxiosResponse } from 'axios';
+ import { reactive, onMounted, ref } from 'vue'
+ import { useRouter } from 'vue-router';
+ import { useRoute } from 'vue-router';
+ import type { UserTableData, ApiResponse, UserResponse, searchParams } from '../types/interfaces.js'
+ import api from "../api/axiosSetup.js";
+
+const route = useRoute();
+const router = useRouter();
+
+
+//ref used for ractive changes for primitive data types and arrays
+const display_value = ref<UserTableData[]>([]);
+
+const search = ref("");        // string
+const lastSearch = ref("");    // string
+const page = ref(1);           // number
+const limit = ref(5);          // number
+const sortBy = ref("");        // string
+const direction = ref("");     // string
+const totalRecord = ref(0);    // number
+const totalPages = ref(0);     // number
+
+//logout
+async function  logoutUser(){
+   try{
+    const response:AxiosResponse<ApiResponse<null>> =
+         await api.post ('users/logout',{})
+        // console.log(response)
+     router.push("/");
+     alert("Logout successfully");
+   }catch(error){
+    const err = error as Error;
+    console.log(err);
+   }
+
+}
+
+function  changeDirection(value: string){
         if(value=='AES') {
-            this.direction= "AES"
+            direction.value == "AES"
         }
         if(value=='DESC') {
-            this.direction= "DESC"
+    direction.value = "DESC"
         }
-        this.onSearch();
-    },
-    changeSort(value){
+        onSearch();
+    }
+
+ function changeSort(value : string){
         if (value=='first_name'){
-            this.sortBy="first_name";
+            sortBy.value=="first_name";
         }
         if (value=='last_name'){
-            this.sortBy="last_name";
+            sortBy.value="last_name";
         }
         if (value=='dob'){
-            this.sortBy="dob";
+            sortBy.value="dob";
         }
         if (value=='mobile_number'){
-            this.sortBy="mobile_number";
+            sortBy.value="mobile_number";
         }
         if (value=='address'){
-            this.sortBy="address";
+            sortBy.value="address";
         }
-        this.onSearch();
-    },
-    async fetchUser(){
-        let url,params;
+        onSearch();
+    }
+
+async function  fetchUser(){
         try{
-           const token = localStorage.getItem("token")
-            url='http://localhost:8080/api/users/getAllUsers';
-            params={search:this.search,page:this.page,limit:this.limit,sortBy:this.sortBy,direction:this.direction};
           
-        const result = await axios.get(url,{
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type" : "application/json"
-                },params},
-            )
-        console.log(result.data.data.users)
-        this.display_value=result.data.data.users;
+            const url='users/getAllUsers';
+            const params: searchParams ={search:search.value,
+                page:page.value,
+                limit:limit.value,
+                sortBy:sortBy.value,
+                direction:direction.value};
+         
+        const result:AxiosResponse<ApiResponse<UserResponse>> = await api.get(url,{params} )
+        //console.log(result.data.data.users)
+        const users = result.data.data.users
+        display_value.value=users;
         
-        if(result.data.data.users.length>0){
-                this.totalRecord = parseInt(result.data.data.users[0].total_count); 
+        if(users.length>0 && users[0]?.total_count !== undefined){
+                totalRecord.value= Number(users[0].total_count); 
             }
-            this.totalPages= Math.ceil(this.totalRecord/this.limit);
-        console.log(this.totalRecord, this.totalPages)
+            totalPages.value= Math.ceil(totalRecord.value/limit.value);
+       
         } catch(error) {
-            console.log(error);
+            const err = error as Error;
+            console.log(err);
         }
         
-    },
-    changePage(value){
-        if(value == 'prev' && this.page>1){
-            --this.page
-            this.onSearch();
-            console.log(this.page)
+    }
+    
+function  changePage(value: string){
+        if(value == 'prev' && page.value>1){
+            --page.value
+            onSearch();
+            //console.log(page.value)
         }
-        if(value=='next' && this.page<this.totalPages){
-            ++this.page
-            this.onSearch();
-            console.log(this.page)
+        if(value=='next' && page.value<totalPages.value){
+            ++page.value
+            onSearch();
+            //console.log(page.value)
         }
         
-    },
-    async onSearch(){
-        if(this.search.trim() !== this.lastSearch){
-            this.page = 1;
+    }
+
+async function onSearch(){
+        if(search.value.trim() !== lastSearch.value){
+            page.value = 1;
         }
-        this.lastSearch=this.search.trim()
-        await this.fetchUser();
+        lastSearch.value=search.value.trim()
+        await fetchUser();
         
-    },
-    createNewUser(){
-        this.$router.push('/add-user')
-    },
-    editData(user_id){
-        this.$router.push(`/edit/${user_id}`);
-    },
-    async deleteData(user_id){
+    }
+
+function  createNewUser(){
+        router.push('/add-user')
+    }
+
+ function editData(user_id: number){
+        router.push(`/edit/${user_id}`);
+    }
+
+    async function deleteData(user_id: number){
         try{
-            const token = localStorage.getItem("token")
-            const result = await axios.delete(`http://localhost:8080/api/users/deleteUser/${user_id}`,{
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type" : "application/json"
-                }
-            })
-            console.log(result)
-            console.log(result.data)
-            console.log(result.data.data.users)
-             this.display_value= result.data.data.users;
+          
+            const result: AxiosResponse<ApiResponse<UserResponse>> = await api.delete(`users/deleteUser/${user_id}`)
+            // console.log(result)
+            // console.log(result.data)
+            // console.log(result.data.data.users)
+             display_value.value= result.data.data.users;
         } catch(error){
-            console.log("error in data deletion",error)
+            const err = error as Error;
+            console.log("error in data deletion",err)
         }
     
     }
-},
-async mounted(){
-    await this.fetchUser();
 
-}
-}
+    //Lifecycle 
+onMounted( async () =>{
+    await fetchUser();
+
+})
+
 </script>
 <style scoped>
 

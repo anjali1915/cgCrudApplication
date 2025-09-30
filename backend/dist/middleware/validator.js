@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import jwt from 'jsonwebtoken';
+import { decryptToken } from '../crypto/cryptos.js';
 const userSchema = Joi.object({
     firstName: Joi.string().min(3).max(10).required().pattern(/[a-zA-Z]+$/).messages({ 'string.pattern.base': 'First Name should be text only' }),
     lastName: Joi.string().min(3).max(10).required().pattern(/[a-zA-Z]+$/).messages({ 'string.pattern.base': 'First Name should be text only' }),
@@ -15,27 +16,34 @@ const validator = (req, res, next) => {
     next();
 };
 const authenticate = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.startsWith('Bearer') ? authHeader.split(" ")[1] : null;
+    const token = req.cookies ? req.cookies.token : undefined;
+    //console.log(token)
     if (!token) {
         return res.status(401).json({ success: false, message: "Missing token" });
     }
-    jwt.verify(token, process.env.JWT_SECRET_KEY, (err, payload) => {
-        if (err) {
-            return res.status(401).json({ status: false, message: "Invalid or expired token" });
-        }
-        console.log("Decoded payload:", payload);
-        req.user = payload;
-        console.log("User inside authorize:", req.user);
+    try {
+        //decryption of token 
+        const decryptedToken = decryptToken(token);
+        const payload = jwt.verify(decryptedToken, process.env.JWT_SECRET_KEY);
+        //console.log("Decoded payload:", payload);
+        res.locals.user = { id: payload.id, role: payload.role };
+        const user = res.locals.user;
+        //console.log(user.id, user.role);
+        //console.log("User inside authorize:", user);
         next();
-    });
+    }
+    catch (error) {
+        const err = error;
+        return res.status(401).json({ status: false, message: "Invalid or expired token", error: err.message });
+    }
 };
 const authorize = (req, res, next) => {
-    console.log("User inside authorize:", req.user);
-    if (!req.user) {
+    const user = res.locals.user;
+    //console.log("User inside authorize:", user);
+    if (!user) {
         return res.status(401).json({ success: false, message: "Not authenticated" });
     }
-    if (req.user.role !== 'admin') {
+    if (user.role !== 'admin') {
         return res.status(403).json({ success: false, message: "Acess denied! Admin only" });
     }
     next();

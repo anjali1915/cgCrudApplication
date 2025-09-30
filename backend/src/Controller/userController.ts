@@ -1,15 +1,7 @@
 import type { Request, Response } from "express";
 import userServices from "../Services/userServices.js";
-
-interface User{
-    user_id: number| string| undefined,
-    first_name: string,
-    last_name: string,
-    dob: string| null,
-    mobile_number: string,
-    address: String,
-}
-
+import type { User, authUserPayload } from "../types/interfaces.ts";
+import { encryptToken } from "../crypto/cryptos.js";
 
 const userController = {
     //create new user
@@ -24,9 +16,10 @@ const userController = {
             const result =await userServices.saveUser(firstName, lastName, dob, mobileNumber, address);
             console.log(result);
             res.status(201).json({success: true,result, message: "User added Successfully" });
-        } catch (error: any) {
-            console.log("Error in user addition", error)
-            res.status(500).json({success:false, message: "Error in user addition", error: error.message });
+        } catch (error) {
+            const err = error as Error;
+            console.log("Error in user addition", err)
+            res.status(500).json({success:false, message: "Error in user addition", error: err.message });
         }
     },
 
@@ -45,9 +38,10 @@ const userController = {
             
         res.status(200).json({success:true ,message:"All data fetched", data:{users: users}});
     }
-        catch (error: any) {
-            console.log(error);
-            res.status(500).json({success:false, message: "Error in user selection", error: error.message });
+        catch (error) {
+            const err = error as Error;
+            console.log(err);
+            res.status(500).json({success:false, message: "Error in user selection", error: err.message });
         }
     },
 
@@ -59,9 +53,10 @@ const userController = {
             const result = await userServices.getUser(id);
             
         res.status(200).json(result.rows[0]);
-        } catch (error: any) {
-            console.log(error);
-            res.status(500).json({success:false, message: "Error in user selection using id", error: error.message })
+        } catch (error) {
+            const err = error as Error;
+            console.log(err);
+            res.status(500).json({success:false, message: "Error in user selection using id", error: err.message })
         }
     },
 
@@ -74,9 +69,10 @@ const userController = {
             const result = await userServices.getAllUsers("", 1, 5, "first_name", "ASC");
             const users = formattedUsers(result.rows);
             res.status(200).json({success:true, message: "User deleted successfully", data: {users: users}});
-        } catch (error: any) {
-            console.log(error);
-            res.status(500).json({success:false, message: "User deleted is failed", error: error.message });
+        } catch (error) {
+            const err = error as Error;
+            console.log(err);
+            res.status(500).json({success:false, message: "User deleted is failed", error: err.message });
         }
     },
 
@@ -94,9 +90,11 @@ const userController = {
             const result = await userServices.getAllUsers("", 1, 5, "first_name", "ASC");
             const users = formattedUsers(result.rows );
             res.status(200).json({success:true, message: "User updated successfully", data: {users }})
-        } catch (error: any) {
-            console.log(error);
-            res.status(500).json({success:false, message: "User updation failed", error: error.message });
+        } catch (error) {
+            const err = error as Error;
+
+            console.log(err);
+            res.status(500).json({success:false, message: "User updation failed", error: err.message });
         }
 
     },
@@ -111,13 +109,43 @@ const userController = {
             return res.status(401).json({success: false, error:"No user found, invalid credentials"})//unauthorised
         }
         const token = userServices.generateToken(user);
-        return res.status(200).json({success: true,message:"token generated", token : token, role: user.role});
-        } catch(error: any){
-            console.log(error);
-            res.status(500).json({ success: false, message: "Authentication has error", error: error.message })
+//console.log(token)
+        //encryption of token
+        const encryptedtoken = encryptToken(token)
+//console.log(encryptedtoken)
+        //token send to frontend
+        res.cookie("token", encryptedtoken, {
+            httpOnly: true, //cannot be accessed by JS
+            secure: false,// over HTTPs
+            sameSite: "lax",
+            maxAge: 15 * 60 *1000 //15 minutes
+
+        });
+        //console.log(token)
+        return res.status(200).json({success: true, message:"token generated", role: user.role});
+        } catch(error){
+            const err = error as Error;
+            console.log(err);
+            res.status(500).json({ success: false, message: "Authentication has error", error: err.message })
         }
         
     },
+    logout:async(req: Request, res: Response)=>{
+        res.clearCookie("token", {
+            httpOnly: false,
+            secure: false,
+            sameSite: "none"
+        })
+        res.status(200).json({success:true, message: "User logout successfully"});
+    },
+    loginUserCheck: (req: Request, res: Response)=>{
+        const user = res.locals.user as authUserPayload;
+        //console.log(user)
+
+        return res.status(200).json({success:true, message:"authenticated", user: user})
+
+    },
+    
 }
 
 

@@ -54,128 +54,117 @@
     </div>
 </template>
 
-<script>
-import axios from 'axios';
-export default {
+<script setup lang="ts">
 
-    name: 'UserForm',
-    data() {
-        return {
-            formObj: {
-                firstName: '',
-                lastName: '',
-                dob: '',
-                mobileNumber: '',
-                address: ''
-            },
-            error: {
-                firstName: '',
-                lastName: '',
-                dob: '',
-                mobileNumber: '',
-                address: ''
-            },
-            formatdDate: ''
+import { reactive } from 'vue';
+import type { AxiosResponse } from 'axios'; 
+import { useRouter } from 'vue-router';
+import type { User, ApiResponse } from '../types/interfaces.ts';
+import api from "../api/axiosSetup";
+
+//create instance
+const router = useRouter();
+
+const formObj = reactive<User>({
+    firstName: '',
+    lastName: '',
+    dob: '',
+    mobileNumber: '',
+    address: ''
+})
+
+const error = reactive<Record<keyof User, string>>({
+    firstName: '',
+    lastName: '',
+    dob: '',
+    mobileNumber: '',
+    address: ''
+})
+
+//save data method 
+async function saveData(e: Event) {
+    e.preventDefault();
+
+    //Reset errors
+    (Object.keys(error) as (keyof User)[]).forEach((key) => (error[key] = ""))
+
+    if (!formObj.firstName) {
+        error.firstName = 'First Name is missing';
+    } else {
+        if (formObj.firstName.length < 3) {
+            error.firstName = 'First Name should be greater than 3';
         }
-
-    },
-    methods: {
-        async saveData(e) {
-            e.preventDefault();
-            this.error = {
-                firstName: '',
-                lastName: '',
-                dob: '',
-                mobileNumber: '',
-                address: ''
-            }
-
-            if (!this.formObj.firstName) {
-                this.error.firstName = 'First Name is missing';
-            } else {
-                if (this.formObj.firstName.length < 3) {
-                    this.error.firstName = 'First Name should be greater than 3';
-                }
-                if (!/^[A-Za-z]+$/.test(this.formObj.firstName)) {
-                    this.error.firstName = 'First Name cannot be numbers';
-                }
-            }
-
-            if (!this.formObj.lastName) {
-                this.error.lastName = 'Last Name is missing';
-            } else {
-                if (this.formObj.lastName.length < 3) {
-                    this.error.lastName = 'Last Name should be greater than 3';
-                }
-                if (!/^[A-Za-z]+$/.test(this.formObj.lastName)) {
-                    this.error.lastName = 'Last Name cannot be numbers ';
-                }
-            }
-
-            const today = new Date();
-
-            if (this.formObj.dob) {
-                const isDate = new Date(this.formObj.dob);
-                if (isDate > today) {
-                    this.error.dob = 'Enter a valid date ';
-                }
-            }
-
-            if (!this.formObj.dob) {
-                this.error.dob = 'Date of birth is missing';
-            }
-            if (!this.formObj.mobileNumber) {
-                this.error.mobileNumber = 'Mobile Number is missing';
-            } else {
-                if (!/^[6-9]\d{9}$/.test(this.formObj.mobileNumber)) {
-                    this.error.mobileNumber = 'Mobile Number is of 10 digit only and starts with 6 to 9';
-                }
-                if (/^[A-Za-z]+$/.test(this.formObj.mobileNumber)) {
-                    this.error.mobileNumber = 'Mobile Number is of numbers only';
-                }
-            }
-
-            if (!this.formObj.address) {
-                this.error.address = 'Address is missing';
-            }
-
-            if (this.formObj.dob) {
-                const date = new Date(this.formObj.dob);
-
-                const formatdDate = date.toISOString().split("T")[0];
-
-                this.formObj.dob = formatdDate;
-            }
-            const token = localStorage.getItem("token")
-            await axios.post('http://localhost:8080/api/users/saveUser', this.formObj, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                }
-            }
-            )
-                .then(response => {
-                    console.log(response.data)
-                    alert("Data has been submitted")
-                    for (const item in this.formObj) {
-                        this.formObj[item] = ''
-                    }
-                })
-                .catch(error => {
-                    console.log(error);
-
-
-                })
-
-        },
-        displayData() {
-            this.$router.push('/display');
+        if (!/^[A-Za-z]+$/.test(formObj.firstName)) {
+            error.firstName = 'First Name cannot be numbers';
         }
     }
 
+    if (!formObj.lastName) {
+        error.lastName = 'Last Name is missing';
+    } else {
+        if (formObj.lastName.length < 3) {
+            error.lastName = 'Last Name should be greater than 3';
+        }
+        if (!/^[A-Za-z]+$/.test(formObj.lastName)) {
+            error.lastName = 'Last Name cannot be numbers ';
+        }
+    }
+
+    const today = new Date();
+
+    if (formObj.dob) {
+        const isDate = new Date(formObj.dob);
+        if (isDate > today) {
+            error.dob = 'Enter a valid date ';
+        }
+    }
+
+    if (!formObj.dob) {
+        error.dob = 'Date of birth is missing';
+    }
+    if (!formObj.mobileNumber) {
+        error.mobileNumber = 'Mobile Number is missing';
+    } else {
+        if (!/^[6-9]\d{9}$/.test(formObj.mobileNumber)) {
+            error.mobileNumber = 'Mobile Number is of 10 digit only and starts with 6 to 9';
+        }
+        if (/^[A-Za-z]+$/.test(formObj.mobileNumber)) {
+            error.mobileNumber = 'Mobile Number is of numbers only';
+        }
+    }
+
+    if (!formObj.address) {
+        error.address = 'Address is missing';
+    }
+
+    if (formObj.dob) {
+        const date = new Date(formObj.dob);
+
+        formObj.dob = date.toISOString().split("T")[0] as string
+    }
+try{
+     const response: AxiosResponse<ApiResponse<User>, User> =
+         await api.post('users/saveUser', formObj);
+            console.log(response.data)
+            alert("Data has been submitted");
+
+            //reset form
+            (Object.keys(formObj) as (keyof User)[]).forEach((key) => (formObj[key] = ""));
+}catch(error){
+     const err = error as Error;
+            console.log(err);
+
+}
+
+}
+
+// Navigate to display page
+function displayData() {
+    router.push('/display');
 }
 
 </script>
+
 
 <style scoped>
 #container {

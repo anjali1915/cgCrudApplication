@@ -1,6 +1,11 @@
 {
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
+    //for alias @ setup
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     // File Layout
      "rootDir": "./src",
      "outDir": "./dist",
@@ -41,6 +46,7 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
   },
   "include": ["**src/*.ts", "**src/*.vue"]
 
